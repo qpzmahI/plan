@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Мой план</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #0d0d0f;
+  --surface: #17171a;
+  --surface2: #202024;
+  --border: rgba(255,255,255,0.07);
+  --text: #f0ede8;
+  --muted: rgba(240,237,232,0.45);
+  --accent: #e8b4cb;
+  --accent2: #c9a96e;
+  --green: #7ec8a0;
+  --pink: #f0c4d8;
+  --radius: 16px;
+}
+html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
+.app { max-width: 430px; margin: 0 auto; padding-bottom: 90px; }
+
+/* HEADER */
+.header { padding: 44px 20px 16px; }
+.header-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 5px; }
+.header-title { font-size: 24px; font-weight: 700; line-height: 1.2; }
+.header-title em { color: var(--accent); font-style: normal; }
+
+/* GIRLS ROW */
+.girls-row { display: flex; gap: 12px; margin: 0 20px 20px; }
+
+/* TODAY GIRL */
+.girl-box { background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 16px; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; overflow: hidden; }
+.girl-box::before { content: ''; position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: radial-gradient(circle, rgba(232,180,203,0.1) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
+.girl-box-label { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.girl-pct-big { font-size: 22px; font-weight: 800; color: var(--text); }
+.girl-pct-big span { font-size: 13px; font-weight: 400; color: var(--muted); }
+.girl-bar-bg { width: 100%; height: 4px; background: var(--surface2); border-radius: 10px; overflow: hidden; }
+.girl-bar-fill { height: 100%; border-radius: 10px; transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+.bar-daily { background: linear-gradient(90deg, #7ec8a0, #e8b4cb); }
+.bar-total { background: linear-gradient(90deg, #c9a96e, #e8b4cb); }
+
+/* SVG GIRL */
+.girl-svg-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+
+/* CONFETTI */
+.confetti-wrap { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 999; overflow: hidden; }
+.cp { position: absolute; opacity: 0; animation: cffall 1.3s ease-in forwards; border-radius: 2px; }
+@keyframes cffall { 0% { transform: translateY(-10px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+
+/* STREAK */
+.streak-row { display: flex; gap: 5px; padding: 0 20px 16px; }
+.sday { flex: 1; border-radius: 10px; background: var(--surface); border: 0.5px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 7px 0; }
+.sday .dn { font-size: 9px; color: var(--muted); }
+.sday .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--surface2); transition: background 0.3s; }
+.sday.today { border-color: rgba(232,180,203,0.4); }
+.sday.today .dn { color: var(--accent); }
+.sday.filled .dot { background: var(--green); }
+.sday.partial .dot { background: var(--accent2); }
+
+/* SECTION */
+.section { padding: 0 20px; margin-bottom: 20px; }
+.sec-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+
+/* TASK */
+.task { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 12px; cursor: pointer; transition: transform 0.12s, background 0.3s, border-color 0.3s; }
+.task.done { background: rgba(126,200,160,0.07); border-color: rgba(126,200,160,0.18); }
+.task:active { transform: scale(0.97); }
+.chk { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.18); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(.4,0,.2,1); }
+.task.done .chk { background: var(--green); border-color: var(--green); transform: scale(1.1); }
+.chk-inner { display: none; }
+.task.done .chk-inner { display: block; }
+.task-body { flex: 1; min-width: 0; }
+.task-name { font-size: 15px; font-weight: 500; margin-bottom: 3px; line-height: 1.3; transition: all 0.25s; }
+.task.done .task-name { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(255,255,255,0.15); }
+.task-desc { font-size: 13px; color: var(--muted); line-height: 1.45; }
+.task.done .task-desc { opacity: 0.4; }
+.task-badge { display: inline-block; margin-top: 6px; font-size: 11px; padding: 2px 8px; border-radius: 6px; background: var(--surface2); color: var(--muted); }
+
+/* PAGES */
+.page { display: none; }
+.page.active { display: block; animation: fadein 0.2s ease; }
+@keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+/* BOTTOM NAV */
+.bnav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 430px; margin: 0 auto; background: rgba(13,13,15,0.96); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid var(--border); display: flex; padding: 10px 0 24px; z-index: 100; }
+.nitem { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; transition: transform 0.15s; }
+.nitem:active { transform: scale(0.88); }
+.nitem .ico { font-size: 19px; line-height: 1; }
+.nitem .lbl { font-size: 9px; color: var(--muted); }
+.nitem.active .lbl { color: var(--accent); }
+
+/* PLAN */
+.ptabs { display: flex; gap: 8px; padding: 0 20px 16px; overflow-x: auto; scrollbar-width: none; }
+.ptabs::-webkit-scrollbar { display: none; }
+.ptab { flex-shrink: 0; padding: 7px 14px; border-radius: 20px; font-size: 13px; border: 0.5px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+.ptab.active { background: var(--accent); color: #0d0d0f; font-weight: 700; border-color: var(--accent); }
+.pcard { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin: 0 20px 10px; }
+.pcard-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
+.pcard-title { font-size: 15px; font-weight: 600; }
+.pcard-badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: rgba(232,180,203,0.1); color: var(--accent); flex-shrink: 0; }
+.plist { list-style: none; }
+.plist li { font-size: 13px; color: var(--muted); line-height: 1.5; padding: 5px 0 5px 14px; position: relative; border-bottom: 0.5px solid var(--border); }
+.plist li::before { content: "–"; position: absolute; left: 0; color: rgba(255,255,255,0.18); }
+.plist li:last-child { border-bottom: none; }
+.phase { display: none; }
+.phase.active { display: block; }
+
+/* ACHIEVEMENTS */
+.ach-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 20px; margin-bottom: 20px; }
+.ach-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; transition: all 0.3s; position: relative; overflow: hidden; }
+.ach-card.unlocked { border-color: rgba(232,180,203,0.35); background: rgba(232,180,203,0.05); }
+.ach-card.unlocked::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, rgba(232,180,203,0.08) 0%, transparent 70%); pointer-events: none; }
+.ach-icon { font-size: 26px; line-height: 1; filter: grayscale(1) brightness(0.5); transition: filter 0.3s; }
+.ach-card.unlocked .ach-icon { filter: none; }
+.ach-name { font-size: 11px; font-weight: 600; color: var(--muted); line-height: 1.3; transition: color 0.3s; }
+.ach-card.unlocked .ach-name { color: var(--text); }
+.ach-desc { font-size: 10px; color: var(--muted); line-height: 1.3; opacity: 0.7; }
+.ach-locked-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; opacity: 0.2; }
+.ach-card.unlocked .ach-locked-overlay { display: none; }
+.new-badge { position: absolute; top: 6px; right: 6px; background: var(--accent); color: #0d0d0f; font-size: 8px; font-weight: 700; padding: 2px 5px; border-radius: 6px; letter-spacing: 0.05em; }
+
+/* CHALLENGES */
+.chal-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin: 0 20px 10px; position: relative; overflow: hidden; }
+.chal-card.active-chal { border-color: rgba(201,169,110,0.3); }
+.chal-card.done-chal { border-color: rgba(126,200,160,0.3); background: rgba(126,200,160,0.05); }
+.chal-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.chal-icon { font-size: 24px; flex-shrink: 0; }
+.chal-info { flex: 1; }
+.chal-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.chal-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.chal-progress { margin-top: 4px; }
+.chal-prog-bar { height: 4px; background: var(--surface2); border-radius: 10px; overflow: hidden; margin-top: 6px; }
+.chal-prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 10px; transition: width 0.4s; }
+.chal-prog-text { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.chal-reward { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--accent); background: rgba(232,180,203,0.1); padding: 3px 8px; border-radius: 6px; margin-top: 8px; }
+
+/* CALENDAR */
+.cal-wrap { margin: 0 20px 20px; }
+.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cal-month { font-size: 15px; font-weight: 600; }
+.cal-nav { background: var(--surface); border: 0.5px solid var(--border); border-radius: 8px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; color: var(--muted); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-dow { font-size: 10px; color: var(--muted); text-align: center; padding: 4px 0; }
+.cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--muted); cursor: default; position: relative; }
+.cal-day.has-data { color: var(--text); }
+.cal-day.today { border: 1px solid rgba(232,180,203,0.5); color: var(--accent); font-weight: 600; }
+.cal-day.full { background: rgba(126,200,160,0.2); color: var(--green); }
+.cal-day.partial { background: rgba(201,169,110,0.15); color: var(--accent2); }
+.cal-day.empty-day { opacity: 0; pointer-events: none; }
+
+/* MOTIVATION BANNER */
+.mot-banner { margin: 0 20px 12px; background: #1a1510; border: 0.5px solid rgba(201,169,110,0.2); border-radius: var(--radius); padding: 20px; }
+.mot-banner .q { font-size: 16px; font-weight: 500; font-style: italic; line-height: 1.4; margin-bottom: 6px; color: var(--accent2); }
+.mot-banner .s { font-size: 12px; color: var(--muted); }
+
+/* TOAST */
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-80px); background: var(--surface); border: 0.5px solid rgba(232,180,203,0.3); border-radius: 12px; padding: 12px 20px; font-size: 13px; font-weight: 500; color: var(--text); z-index: 998; transition: transform 0.3s cubic-bezier(.4,0,.2,1); white-space: nowrap; box-shadow: 0 8px 32px rgba(0,0,0,0.4); max-width: 90vw; text-align: center; white-space: normal; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* TOTAL PROGRESS GIRL */
+.total-girl-section { margin: 0 20px 20px; background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 20px; }
+.total-girl-title { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+.total-girl-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+.total-girl-row { display: flex; align-items: center; gap: 20px; }
+.total-girl-info { flex: 1; }
+.total-pct { font-size: 32px; font-weight: 800; }
+.total-pct span { font-size: 16px; font-weight: 400; color: var(--muted); }
+.total-label { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.total-days { font-size: 12px; color: var(--muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="confetti-wrap" id="confetti"></div>
+<div class="toast" id="toast"></div>
+
+<div class="app">
+
+<!-- ===== TODAY ===== -->
+<div class="page active" id="pg-today">
+  <div class="header">
+    <div class="header-sub" id="hdate">...</div>
+    <div class="header-title">Привет, <em>красотка</em> 🌿</div>
+  </div>
+
+  <!-- TWO GIRLS -->
+  <div class="girls-row">
+    <!-- Daily girl -->
+    <div class="girl-box">
+      <div class="girl-box-label">Сегодня</div>
+      <div class="girl-svg-wrap">
+        <svg width="64" height="110" viewBox="0 0 64 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <clipPath id="gc1">
+              <ellipse cx="32" cy="11" rx="9" ry="10"/>
+              <path d="M23 18 Q20 20 19 24 L17 38 Q16 46 17 54 Q18 60 20 64 L22 76 Q24 84 26 90 L28 98 Q29 104 30 108 L34 108 Q35 104 36 98 L38 90 Q40 84 42 76 L44 64 Q46 60 47 54 Q48 46 47 38 L45 24 Q44 20 41 18 Q37 15 32 15 Q27 15 23 18Z"/>
+              <path d="M19 24 Q14 26 11 32 Q9 38 10 44 Q11 50 14 52 Q16 54 18 52 L19 38Z"/>
+              <path d="M45 24 Q50 26 53 32 Q55 38 54 44 Q53 50 50 52 Q48 54 46 52 L45 38Z"/>
+            </clipPath>
+            <mask id="gm1">
+              <rect id="gfr1" x="0" y="110" width="64" height="110" fill="white"/>
+            </mask>
+            <linearGradient id="gg1" x1="0" y1="110" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#7ec8a0"/>
+              <stop offset="50%" stop-color="#c9a96e"/>
+              <stop offset="100%" stop-color="#e8b4cb"/>
+            </linearGradient>
+          </defs>
+          <g clip-path="url(#gc1)" opacity="0.1"><rect width="64" height="110" fill="white"/></g>
+          <g clip-path="url(#gc1)" mask="url(#gm1)"><rect width="64" height="110" fill="url(#gg1)"/></g>
+          <g clip-path="url(#gc1)"><rect width="64" height="110" fill="none" stroke="rgba(240,196,216,0.2)" stroke-width="0.5"/></g>
+          <!-- hair -->
+          <ellipse cx="32" cy="7" rx="9" ry="5" fill="rgba(240,196,216,0.12)"/>
+          <!-- eyes -->
+          <circle cx="29" cy="11" r="1" fill="rgba(240,196,216,0.25)"/>
+          <circle cx="35" cy="11" r="1" fill="rgba(240,196,216,0.25)"/>
+          <!-- lips -->
+          <path d="M30 14.5 Q32 16 34 14.5" stroke="rgba(232,180,203,0.3)" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="girl-pct-big"><span id="d-pct">0</span><span>%</span></div>
+      <div class="girl-bar-bg" style="width:100%"><div class="girl-bar-fill bar-daily" id="d-bar" style="width:0%"></div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="d-sub">0 / 6</div>
+    </div>
+
+    <!-- Total girl -->
+    <div class="girl-box">
+      <div class="girl-box-label">Весь план</div>
+      <div class="girl-svg-wrap">
+        <svg width="64" height="110" viewBox="0 0 64 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <clipPath id="gc2">
+              <ellipse cx="32" cy="11" rx="9" ry="10"/>
+              <path d="M23 18 Q20 20 19 24 L17 38 Q16 46 17 54 Q18 60 20 64 L22 76 Q24 84 26 90 L28 98 Q29 104 30 108 L34 108 Q35 104 36 98 L38 90 Q40 84 42 76 L44 64 Q46 60 47 54 Q48 46 47 38 L45 24 Q44 20 41 18 Q37 15 32 15 Q27 15 23 18Z"/>
+              <path d="M19 24 Q14 26 11 32 Q9 38 10 44 Q11 50 14 52 Q16 54 18 52 L19 38Z"/>
+              <path d="M45 24 Q50 26 53 32 Q55 38 54 44 Q53 50 50 52 Q48 54 46 52 L45 38Z"/>
+            </clipPath>
+            <mask id="gm2">
+              <rect id="gfr2" x="0" y="110" width="64" height="110" fill="white"/>
+            </mask>
+            <linearGradient id="gg2" x1="0" y1="110" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#c9a96e"/>
+              <stop offset="100%" stop-color="#f0c4d8"/>
+            </linearGradient>
+          </defs>
+          <g clip-path="url(#gc2)" opacity="0.1"><rect width="64" height="110" fill="white"/></g>
+          <g clip-path="url(#gc2)" mask="url(#gm2)"><rect width="64" height="110" fill="url(#gg2)"/></g>
+          <g clip-path="url(#gc2)"><rect width="64" height="110" fill="none" stroke="rgba(240,196,216,0.2)" stroke-width="0.5"/></g>
+          <ellipse cx="32" cy="7" rx="9" ry="5" fill="rgba(240,196,216,0.12)"/>
+          <circle cx="29" cy="11" r="1" fill="rgba(240,196,216,0.25)"/>
+          <circle cx="35" cy="11" r="1" fill="rgba(240,196,216,0.25)"/>
+          <path d="M30 14.5 Q32 16 34 14.5" stroke="rgba(232,180,203,0.3)" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="girl-pct-big"><span id="t-pct">0</span><span>%</span></div>
+      <div class="girl-bar-bg" style="width:100%"><div class="girl-bar-fill bar-total" id="t-bar" style="width:0%"></div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="t-sub">день 1 из 180</div>
+    </div>
+  </div>
+
+  <!-- STREAK -->
+  <div class="streak-row" id="streakRow"></div>
+
+  <div class="section">
+    <div class="sec-label">Каждый день</div>
+    <div id="daily"></div>
+  </div>
+  <div class="section">
+    <div class="sec-label">Регулярно</div>
+    <div id="regular"></div>
+  </div>
+</div>
+
+<!-- ===== ACHIEVEMENTS ===== -->
+<div class="page" id="pg-ach">
+  <div class="header">
+    <div class="header-sub">Твои достижения</div>
+    <div class="header-title">Коллекция <em>наград</em> 🏆</div>
+  </div>
+
+  <div class="section" style="margin-bottom:8px;">
+    <div class="sec-label">Достижения</div>
+  </div>
+  <div class="ach-grid" id="achGrid"></div>
+
+  <div class="section" style="margin-bottom:8px; margin-top:8px;">
+    <div class="sec-label">Активные челленджи</div>
+  </div>
+  <div id="chalList"></div>
+</div>
+
+<!-- ===== CALENDAR ===== -->
+<div class="page" id="pg-cal">
+  <div class="header">
+    <div class="header-sub">Твой прогресс</div>
+    <div class="header-title">Календарь <em>побед</em> 📅</div>
+  </div>
+
+  <div class="cal-wrap">
+    <div class="cal-header">
+      <div class="cal-nav" onclick="calNav(-1)">‹</div>
+      <div class="cal-month" id="calMonth">...</div>
+      <div class="cal-nav" onclick="calNav(1)">›</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+  <!-- Total progress girl big -->
+  <div class="total-girl-section">
+    <div class="total-girl-title">Общий прогресс плана</div>
+    <div class="total-girl-sub">Каждый день добавляет ~0.5% к твоей цели</div>
+    <div class="total-girl-row">
+      <svg width="70" height="120" viewBox="0 0 70 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <clipPath id="gc3">
+            <ellipse cx="35" cy="12" rx="10" ry="11"/>
+            <path d="M25 20 Q22 22 21 27 L19 42 Q18 51 19 60 Q20 67 22 72 L24 85 Q26 94 28 101 L30 110 Q31 116 32 119 L38 119 Q39 116 40 110 L42 101 Q44 94 46 85 L48 72 Q50 67 51 60 Q52 51 51 42 L49 27 Q48 22 45 20 Q40 17 35 17 Q30 17 25 20Z"/>
+            <path d="M21 27 Q15 29 12 36 Q10 43 11 50 Q12 57 15 59 Q18 61 20 59 L21 42Z"/>
+            <path d="M49 27 Q55 29 58 36 Q60 43 59 50 Q58 57 55 59 Q52 61 50 59 L49 42Z"/>
+          </clipPath>
+          <mask id="gm3">
+            <rect id="gfr3" x="0" y="120" width="70" height="120" fill="white"/>
+          </mask>
+          <linearGradient id="gg3" x1="0" y1="120" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#7ec8a0"/>
+            <stop offset="40%" stop-color="#c9a96e"/>
+            <stop offset="100%" stop-color="#e8b4cb"/>
+          </linearGradient>
+        </defs>
+        <g clip-path="url(#gc3)" opacity="0.08"><rect width="70" height="120" fill="white"/></g>
+        <g clip-path="url(#gc3)" mask="url(#gm3)"><rect width="70" height="120" fill="url(#gg3)"/></g>
+        <ellipse cx="35" cy="7" rx="10" ry="6" fill="rgba(240,196,216,0.15)"/>
+        <circle cx="31" cy="12" r="1.2" fill="rgba(240,196,216,0.3)"/>
+        <circle cx="39" cy="12" r="1.2" fill="rgba(240,196,216,0.3)"/>
+        <path d="M32 16 Q35 18 38 16" stroke="rgba(232,180,203,0.4)" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="total-girl-info">
+        <div class="total-pct" id="big-total-pct">0<span>%</span></div>
+        <div class="total-label">плана выполнено</div>
+        <div class="girl-bar-bg"><div class="girl-bar-fill bar-total" id="big-total-bar" style="width:0%"></div></div>
+        <div class="total-days" id="total-days-text">День 1 из 180</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pcard" style="margin:0 20px 10px;">
+    <div class="pcard-top"><div class="pcard-title">Легенда</div></div>
+    <ul class="plist">
+      <li><span style="color:var(--green)">●</span> Зелёный — все задачи выполнены</li>
+      <li><span style="color:var(--accent2)">●</span> Золотой — часть задач выполнена</li>
+      <li><span style="color:var(--muted)">●</span> Серый — нет данных</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== PLAN ===== -->
+<div class="page" id="pg-plan">
+  <div class="header">
+    <div class="header-sub">Полный план</div>
+    <div class="header-title">Твой путь <em>к цели</em></div>
+  </div>
+  <div class="ptabs">
+    <div class="ptab active" onclick="switchPhase('p1',this)">Недели 1–2</div>
+    <div class="ptab" onclick="switchPhase('p2',this)">Месяц 1–2</div>
+    <div class="ptab" onclick="switchPhase('p3',this)">Месяц 3–6</div>
+    <div class="ptab" onclick="switchPhase('p4',this)">Долгосрочно</div>
+  </div>
+  <div class="phase active" id="p1">
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">Гигиена и чистота</div><div class="pcard-badge">Неделя 1</div></div><ul class="plist"><li>Душ каждый день в одно и то же время</li><li>Дезодорант на сухую кожу после душа</li><li>Нижнее бельё меняется каждый день</li><li>Чистить зубы 2 раза, жвачка после еды</li></ul></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">Подмышки — эпилятор</div><div class="pcard-badge">Неделя 1</div></div><ul class="plist"><li>Первая эпиляция после душа — кожа мягче</li><li>После — успокаивающий крем, ждать 20 мин</li><li>Повторять раз в 5–7 дней</li><li>Если тёмные — 1 сеанс отбеливания в салоне</li></ul></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">Одежда</div><div class="pcard-badge">Неделя 1</div></div><ul class="plist"><li>Только чистые вещи, без запаха и пятен</li><li>Гладить всё что мнётся перед выходом</li><li>Убрать вещи с катышками и дырками</li></ul></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">Режим сна и воды</div><div class="pcard-badge">Неделя 2</div></div><ul class="plist"><li>Ложиться и вставать в одно время, даже в выходные</li><li>7–8 часов сна минимум</li><li>1.5–2 литра воды в день</li><li>3–4 приёма пищи, не пропускать завтрак</li></ul></div>
+  </div>
+  <div class="phase" id="p2">
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">Начать тренировки</div><div class="pcard-badge">С 3-й недели</div></div><ul class="plist"><li>3 раза в неделю, через день</li><li>Разминка 10 мин кардио перед каждой</li><li>Приседания, мостик, выпады, жим ногами</li><li>Тяга блока, разводка гантелями — на верх тела</li><li>Белок минимум 1.2г на кг веса</li></ul></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">Гигиена интимной зоны</div><div class="pcard-badge">Постоянно</div></div><ul class="plist"><li>Мыться каждый день</li><li>Нижнее бельё из хлопка — избегать синтетику</li><li>Купить несколько хороших комплектов</li></ul></div>
+  </div>
+  <div class="phase" id="p3">
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">Форма тела</div><div class="pcard-badge">3–6 месяцев</div></div><ul class="plist"><li>Тренировки уже привычка — увеличить веса</li><li>Добавить кардио: 20–30 мин бега 2 раза в неделю</li><li>Ягодицы и ноги заметно плотнее и округлее</li><li>Плечи шире визуально, талия выразительнее</li><li>Дефицит калорий –200–300 ккал, не больше</li></ul></div>
+  </div>
+  <div class="phase" id="p4">
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">Зубы и прикус</div><div class="pcard-badge">1–2 года</div></div><ul class="plist"><li>Не пропускать визиты к ортодонту</li><li>Ирригатор + специальная щётка для брекетов</li><li>После снятия — ретейнер обязательно</li><li>Отбеливание только после снятия брекетов</li></ul></div>
+    <div class="mot-banner"><div class="q">Через год ты не узнаешь себя в зеркале</div><div class="s">Каждый маленький шаг сегодня — это она завтра 💕</div></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="bnav">
+  <div class="nitem active" onclick="switchPage('today',this)"><div class="ico">✦</div><div class="lbl">Сегодня</div></div>
+  <div class="nitem" onclick="switchPage('ach',this)"><div class="ico">🏆</div><div class="lbl">Награды</div></div>
+  <div class="nitem" onclick="switchPage('cal',this)"><div class="ico">📅</div><div class="lbl">Календарь</div></div>
+  <div class="nitem" onclick="switchPage('plan',this)"><div class="ico">◈</div><div class="lbl">План</div></div>
+</div>
+</div>
+
+<script>
+// ---- DATA ----
+var TASKS = [
+  {id:'shower',    name:'Душ',                   desc:'Каждый день в одно и то же время',                       badge:'ежедневно',        type:'daily'},
+  {id:'deo',       name:'Дезодорант',             desc:'На сухую кожу после душа, не поверх запаха',             badge:'ежедневно',        type:'daily'},
+  {id:'underwear', name:'Сменить нижнее бельё',  desc:'Каждый день без исключений',                             badge:'ежедневно',        type:'daily'},
+  {id:'teeth',     name:'Зубы 2 раза',            desc:'Утром и вечером, жвачка после еды',                      badge:'ежедневно',        type:'daily'},
+  {id:'water',     name:'1.5–2 литра воды',       desc:'Убирает отёки, улучшает кожу и самочувствие',            badge:'ежедневно',        type:'daily'},
+  {id:'sleep',     name:'Лечь спать вовремя',     desc:'7–8 часов, в одно и то же время каждый день',            badge:'ежедневно',        type:'daily'},
+  {id:'epilator',  name:'Эпилятор — подмышки',   desc:'После душа, успокаивающий крем, ждать 20 мин',           badge:'раз в 5–7 дней',  type:'regular'},
+  {id:'clothes',   name:'Проверить одежду',       desc:'Чистая, поглажена, без запаха и катышков',               badge:'перед выходом',    type:'regular'},
+  {id:'workout',   name:'Тренировка',             desc:'Приседания, мостик, выпады + верх. 10 мин кардио',       badge:'3 раза в неделю', type:'regular'},
+];
+
+var ACHIEVEMENTS = [
+  {id:'first',    icon:'🌸', name:'Первый шаг',      desc:'Отметь первую задачу',          cond:function(s){return s.totalDone>=1;}},
+  {id:'day1',     icon:'⭐', name:'День один',        desc:'Выполни все задачи за день',    cond:function(s){return s.perfectDays>=1;}},
+  {id:'streak3',  icon:'🔥', name:'3 дня подряд',    desc:'3 дня подряд без пропусков',    cond:function(s){return s.streak>=3;}},
+  {id:'streak7',  icon:'💫', name:'Неделя!',         desc:'7 дней подряд',                  cond:function(s){return s.streak>=7;}},
+  {id:'streak14', icon:'🌙', name:'2 недели',        desc:'14 дней подряд',                 cond:function(s){return s.streak>=14;}},
+  {id:'streak30', icon:'👑', name:'Месяц победы',    desc:'30 дней подряд!',               cond:function(s){return s.streak>=30;}},
+  {id:'workout5', icon:'💪', name:'5 тренировок',    desc:'Проведи 5 тренировок',           cond:function(s){return s.workouts>=5;}},
+  {id:'workout20',icon:'🏋️', name:'20 тренировок',  desc:'Проведи 20 тренировок',          cond:function(s){return s.workouts>=20;}},
+  {id:'water7',   icon:'💧', name:'Водный режим',    desc:'7 дней пьёшь воду по норме',     cond:function(s){return s.waterDays>=7;}},
+  {id:'total10',  icon:'✨', name:'10% плана',       desc:'10% общего прана выполнено',     cond:function(s){return s.totalPct>=10;}},
+  {id:'total25',  icon:'🌟', name:'Четверть пути',   desc:'25% плана позади!',              cond:function(s){return s.totalPct>=25;}},
+  {id:'total50',  icon:'🦋', name:'Половина пути',   desc:'50% плана — ты молодец!',        cond:function(s){return s.totalPct>=50;}},
+  {id:'perfect5', icon:'💎', name:'5 идеальных дней',desc:'5 дней всё выполнено',           cond:function(s){return s.perfectDays>=5;}},
+  {id:'morning',  icon:'🌅', name:'Ранняя пташка',   desc:'Открой приложение до 9 утра',    cond:function(s){return s.earlyOpen;}},
+  {id:'clothes7', icon:'👗', name:'Всегда красива',  desc:'7 дней проверяла одежду',        cond:function(s){return s.clothesDays>=7;}},
+];
+
+var CHALLENGES = [
+  {id:'ch1', icon:'💦', name:'Водный марафон',      desc:'Пей воду 7 дней подряд',                    total:7,   key:'waterDays',    reward:'значок 💧'},
+  {id:'ch2', icon:'🏃', name:'Первый месяц в зале', desc:'Проведи 12 тренировок за месяц',            total:12,  key:'workouts',     reward:'значок 💪'},
+  {id:'ch3', icon:'🌙', name:'Режим сна',           desc:'Ложись вовремя 14 дней подряд',             total:14,  key:'streak',       reward:'значок 🌙'},
+  {id:'ch4', icon:'✨', name:'Идеальная неделя',     desc:'7 дней подряд — все задачи выполнены',      total:7,   key:'perfectDays',  reward:'значок 👑'},
+  {id:'ch5', icon:'🌸', name:'Первые 30 дней',      desc:'Не пропускай план 30 дней',                 total:30,  key:'streak',       reward:'значок 🌸'},
+];
+
+// ---- STATE ----
+// We use in-memory + sessionStorage for persistence within same browser session
+var state = {
+  done: {},           // today's tasks
+  streak: 0,
+  perfectDays: 0,
+  totalDone: 0,
+  workouts: 0,
+  waterDays: 0,
+  clothesDays: 0,
+  earlyOpen: false,
+  totalPct: 0,
+  dayNumber: 1,
+  unlockedAch: {},
+  calData: {},        // date -> {done, total}
+  newAch: {}
+};
+
+function saveState() {
+  try { sessionStorage.setItem('bpst', JSON.stringify(state)); } catch(e){}
+}
+function loadState() {
+  try {
+    var s = sessionStorage.getItem('bpst');
+    if (s) { var p = JSON.parse(s); for (var k in p) state[k] = p[k]; }
+  } catch(e){}
+}
+
+// ---- HELPERS ----
+function getDateStr() {
+  var d = new Date();
+  var days = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+  var months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  return days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()];
+}
+
+function todayKey() { return new Date().toISOString().slice(0,10); }
+
+function spawnConfetti(x, y) {
+  var colors = ['#e8b4cb','#c9a96e','#7ec8a0','#f0c4d8','#ffffff','#ffd700'];
+  var wrap = document.getElementById('confetti');
+  for (var i = 0; i < 22; i++) {
+    var p = document.createElement('div');
+    p.className = 'cp';
+    p.style.left = (x - 25 + Math.random()*50) + 'px';
+    p.style.top = (y - 10) + 'px';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.width = (5 + Math.random()*7) + 'px';
+    p.style.height = (5 + Math.random()*7) + 'px';
+    p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    p.style.animationDelay = (Math.random()*0.3) + 's';
+    p.style.animationDuration = (0.9 + Math.random()*0.6) + 's';
+    wrap.appendChild(p);
+    setTimeout(function(el){ el.remove(); }, 1600, p);
+  }
+}
+
+var toastTimer;
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2800);
+}
+
+// ---- UPDATE GIRLS ----
+function updateGirl1(pct) {
+  var r = document.getElementById('gfr1');
+  if (!r) return;
+  var h = 110;
+  var y = h - (h * pct / 100);
+  r.setAttribute('y', y);
+  r.setAttribute('height', h - y + 5);
+}
+function updateGirl2(pct) {
+  var r = document.getElementById('gfr2');
+  if (!r) return;
+  var h = 110;
+  var y = h - (h * pct / 100);
+  r.setAttribute('y', y);
+  r.setAttribute('height', h - y + 5);
+}
+function updateGirl3(pct) {
+  var r = document.getElementById('gfr3');
+  if (!r) return;
+  var h = 120;
+  var y = h - (h * pct / 100);
+  r.setAttribute('y', y);
+  r.setAttribute('height', h - y + 5);
+}
+
+// ---- ACHIEVEMENTS CHECK ----
+function checkAchievements() {
+  ACHIEVEMENTS.forEach(function(a) {
+    if (!state.unlockedAch[a.id] && a.cond(state)) {
+      state.unlockedAch[a.id] = true;
+      state.newAch[a.id] = true;
+      setTimeout(function(){ showToast('🏆 Новая награда: ' + a.name + ' ' + a.icon); }, 600);
+    }
+  });
+}
+
+// ---- RENDER TODAY ----
+function renderToday() {
+  document.getElementById('hdate').textContent = getDateStr();
+
+  var daily = TASKS.filter(function(t){ return t.type==='daily'; });
+  var regular = TASKS.filter(function(t){ return t.type==='regular'; });
+  var doneCount = daily.filter(function(t){ return state.done[t.id]; }).length;
+  var total = daily.length;
+  var pct = total ? Math.round(doneCount/total*100) : 0;
+
+  // Daily girl
+  document.getElementById('d-pct').textContent = pct;
+  document.getElementById('d-bar').style.width = pct + '%';
+  document.getElementById('d-sub').textContent = doneCount + ' / ' + total;
+  updateGirl1(pct);
+
+  // Total girl
+  var tpct = state.totalPct;
+  document.getElementById('t-pct').textContent = Math.round(tpct);
+  document.getElementById('t-bar').style.width = tpct + '%';
+  document.getElementById('t-sub').textContent = 'день ' + state.dayNumber + ' из 180';
+  updateGirl2(tpct);
+
+  // streak
+  var row = document.getElementById('streakRow');
+  row.innerHTML = '';
+  var dayNames = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+  var today = new Date();
+  for (var i=6; i>=0; i--) {
+    var d2 = new Date(today); d2.setDate(today.getDate()-i);
+    var key = d2.toISOString().slice(0,10);
+    var cd = state.calData[key];
+    var cls = 'sday';
+    if (i===0) cls += ' today';
+    if (cd) {
+      if (cd.done >= cd.total) cls += ' filled';
+      else cls += ' partial';
+    }
+    row.innerHTML += '<div class="'+cls+'"><div class="dn">'+dayNames[d2.getDay()]+'</div><div class="dot"></div></div>';
+  }
+
+  // tasks
+  renderTaskList('daily', daily);
+  renderTaskList('regular', regular);
+}
+
+function renderTaskList(elId, list) {
+  var el = document.getElementById(elId);
+  el.innerHTML = '';
+  list.forEach(function(t) {
+    var isDone = !!state.done[t.id];
+    var div = document.createElement('div');
+    div.className = 'task' + (isDone ? ' done' : '');
+    div.innerHTML =
+      '<div class="chk">' +
+        (isDone ? '<svg class="chk-inner" width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#0d0d0f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') +
+      '</div>' +
+      '<div class="task-body">' +
+        '<div class="task-name">'+t.name+'</div>' +
+        '<div class="task-desc">'+t.desc+'</div>' +
+        '<span class="task-badge">'+t.badge+'</span>' +
+      '</div>';
+    (function(task, el2) {
+      el2.addEventListener('click', function(e) {
+        var wasNotDone = !state.done[task.id];
+        state.done[task.id] = !state.done[task.id];
+
+        if (wasNotDone) {
+          state.totalDone++;
+          if (task.id === 'workout') state.workouts++;
+          if (task.id === 'water') state.waterDays++;
+          if (task.id === 'clothes') state.clothesDays++;
+          var rect2 = el2.getBoundingClientRect();
+          spawnConfetti(rect2.left + rect2.width/2, rect2.top + 20);
+        } else {
+          if (state.totalDone > 0) state.totalDone--;
+        }
+
+        // update cal data for today
+        var daily2 = TASKS.filter(function(x){ return x.type==='daily'; });
+        var dc = daily2.filter(function(x){ return state.done[x.id]; }).length;
+        state.calData[todayKey()] = {done: dc, total: daily2.length};
+
+        // update total pct (each perfect day = 0.56%, 180 days = 100%)
+        var perfectCount = 0;
+        Object.keys(state.calData).forEach(function(k) {
+          var cd = state.calData[k];
+          if (cd.done >= cd.total) perfectCount++;
+        });
+        state.perfectDays = perfectCount;
+        state.totalPct = Math.min(100, perfectCount * 0.556);
+
+        // streak calc
+        var s = 0;
+        var checkDate = new Date();
+        while(true) {
+          var k2 = checkDate.toISOString().slice(0,10);
+          var cd2 = state.calData[k2];
+          if (cd2 && cd2.done >= cd2.total) { s++; checkDate.setDate(checkDate.getDate()-1); }
+          else break;
+          if (s > 365) break;
+        }
+        state.streak = s;
+
+        // early open
+        if (new Date().getHours() < 9) state.earlyOpen = true;
+
+        checkAchievements();
+        saveState();
+        renderToday();
+        renderAchievements();
+      });
+    })(t, div);
+    el.appendChild(div);
+  });
+}
+
+// ---- ACHIEVEMENTS ----
+function renderAchievements() {
+  var grid = document.getElementById('achGrid');
+  grid.innerHTML = '';
+  ACHIEVEMENTS.forEach(function(a) {
+    var unlocked = !!state.unlockedAch[a.id];
+    var isNew = !!state.newAch[a.id];
+    var div = document.createElement('div');
+    div.className = 'ach-card' + (unlocked ? ' unlocked' : '');
+    div.innerHTML =
+      (isNew && unlocked ? '<div class="new-badge">NEW</div>' : '') +
+      '<div class="ach-icon">'+a.icon+'</div>' +
+      '<div class="ach-name">'+a.name+'</div>' +
+      '<div class="ach-desc">'+a.desc+'</div>' +
+      (!unlocked ? '<div class="ach-locked-overlay">🔒</div>' : '');
+    grid.appendChild(div);
+  });
+
+  // challenges
+  var cl = document.getElementById('chalList');
+  cl.innerHTML = '';
+  CHALLENGES.forEach(function(c) {
+    var cur = state[c.key] || 0;
+    var pct = Math.min(100, Math.round(cur/c.total*100));
+    var isDone = cur >= c.total;
+    var div = document.createElement('div');
+    div.className = 'chal-card ' + (isDone ? 'done-chal' : 'active-chal');
+    div.style.margin = '0 20px 10px';
+    div.innerHTML =
+      '<div class="chal-top">' +
+        '<div class="chal-icon">'+c.icon+'</div>' +
+        '<div class="chal-info">' +
+          '<div class="chal-name">'+c.name+(isDone?' ✅':'')+'</div>' +
+          '<div class="chal-desc">'+c.desc+'</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="chal-progress">' +
+        '<div class="chal-prog-bar"><div class="chal-prog-fill" style="width:'+pct+'%"></div></div>' +
+        '<div class="chal-prog-text">'+Math.min(cur,c.total)+' / '+c.total+(isDone?' — выполнено!':'')+' </div>' +
+      '</div>' +
+      '<div class="chal-reward">🎁 Награда: '+c.reward+'</div>';
+    cl.appendChild(div);
+  });
+}
+
+// ---- CALENDAR ----
+var calOffset = 0;
+function renderCalendar() {
+  var now = new Date();
+  var y = now.getFullYear();
+  var m = now.getMonth() + calOffset;
+  while (m < 0) { m += 12; y--; }
+  while (m > 11) { m -= 12; y++; }
+
+  var months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  document.getElementById('calMonth').textContent = months[m] + ' ' + y;
+
+  var grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  var dows = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  dows.forEach(function(d) {
+    var el = document.createElement('div');
+    el.className = 'cal-dow';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  var firstDay = new Date(y, m, 1).getDay();
+  firstDay = (firstDay + 6) % 7; // Mon=0
+  for (var i=0; i<firstDay; i++) {
+    var el = document.createElement('div');
+    el.className = 'cal-day empty-day';
+    grid.appendChild(el);
+  }
+
+  var daysInMonth = new Date(y, m+1, 0).getDate();
+  var todayStr = todayKey();
+  for (var d2=1; d2<=daysInMonth; d2++) {
+    var dateStr = y + '-' + String(m+1).padStart(2,'0') + '-' + String(d2).padStart(2,'0');
+    var cd = state.calData[dateStr];
+    var el = document.createElement('div');
+    var cls = 'cal-day';
+    if (dateStr === todayStr) cls += ' today';
+    if (cd) {
+      cls += ' has-data';
+      if (cd.done >= cd.total) cls += ' full';
+      else if (cd.done > 0) cls += ' partial';
+    }
+    el.className = cls;
+    el.textContent = d2;
+    grid.appendChild(el);
+  }
+
+  // big girl
+  var tp = state.totalPct;
+  document.getElementById('big-total-pct').innerHTML = Math.round(tp) + '<span>%</span>';
+  document.getElementById('big-total-bar').style.width = tp + '%';
+  document.getElementById('total-days-text').textContent = 'День ' + state.dayNumber + ' из 180';
+  updateGirl3(tp);
+}
+
+function calNav(dir) {
+  calOffset += dir;
+  renderCalendar();
+}
+
+// ---- PAGE SWITCH ----
+function switchPage(name, el) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('pg-'+name).classList.add('active');
+  document.querySelectorAll('.nitem').forEach(function(n){ n.classList.remove('active'); });
+  el.classList.add('active');
+  window.scrollTo(0,0);
+  if (name==='ach') renderAchievements();
+  if (name==='cal') renderCalendar();
+}
+
+function switchPhase(id, el) {
+  document.querySelectorAll('.phase').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.ptab').forEach(function(t){ t.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+// ---- INIT ----
+loadState();
+if (!state.dayNumber) state.dayNumber = 1;
+if (new Date().getHours() < 9) state.earlyOpen = true;
+renderToday();
+renderCalendar();
+</script>
+</body>
+</html>
