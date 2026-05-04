@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Мой план</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #0d0d0f; --surface: #17171a; --surface2: #202024; --border: rgba(255,255,255,0.07);
+  --text: #f0ede8; --muted: rgba(240,237,232,0.45); --accent: #e8b4cb; --accent2: #c9a96e;
+  --green: #7ec8a0; --pink: #f0c4d8; --blue: #8bb8e8; --radius: 16px;
+}
+html,body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; overscroll-behavior:none; }
+.app { max-width:430px; margin:0 auto; padding-bottom:90px; }
+
+.header { padding:44px 20px 16px; }
+.header-sub { font-size:11px; color:var(--muted); letter-spacing:.09em; text-transform:uppercase; margin-bottom:5px; }
+.header-title { font-size:24px; font-weight:700; line-height:1.2; }
+.header-title em { color:var(--accent); font-style:normal; }
+
+/* GIRLS */
+.girls-row { display:flex; gap:12px; margin:0 20px 20px; }
+.girl-box { background:var(--surface); border:.5px solid var(--border); border-radius:20px; padding:16px 12px; flex:1; display:flex; flex-direction:column; align-items:center; gap:7px; position:relative; overflow:hidden; }
+.girl-box-label { font-size:10px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+.girl-pct-big { font-size:22px; font-weight:800; }
+.girl-pct-big span { font-size:13px; font-weight:400; color:var(--muted); }
+.girl-bar-bg { width:100%; height:4px; background:var(--surface2); border-radius:10px; overflow:hidden; }
+.girl-bar-fill { height:100%; border-radius:10px; transition:width .5s cubic-bezier(.4,0,.2,1); }
+.bar-d { background:linear-gradient(90deg,#7ec8a0,#e8b4cb); }
+.bar-t { background:linear-gradient(90deg,#c9a96e,#e8b4cb); }
+.girl-sub-text { font-size:10px; color:var(--muted); }
+
+/* STREAK */
+.streak-row { display:flex; gap:5px; padding:0 20px 16px; }
+.sday { flex:1; border-radius:10px; background:var(--surface); border:.5px solid var(--border); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:7px 0; }
+.sday .dn { font-size:9px; color:var(--muted); }
+.sday .dot { width:6px; height:6px; border-radius:50%; background:var(--surface2); transition:background .3s; }
+.sday.today { border-color:rgba(232,180,203,.4); }
+.sday.today .dn { color:var(--accent); }
+.sday.filled .dot { background:var(--green); }
+.sday.partial .dot { background:var(--accent2); }
+
+/* TIME BLOCKS */
+.time-block { margin:0 20px 16px; }
+.time-block-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; cursor:pointer; }
+.time-block-icon { font-size:18px; }
+.time-block-title { font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); flex:1; }
+.time-block-prog { font-size:12px; color:var(--muted); }
+.time-block-chevron { font-size:12px; color:var(--muted); transition:transform .2s; }
+.time-block.collapsed .time-block-chevron { transform:rotate(-90deg); }
+.time-block-body { overflow:hidden; transition:max-height .3s ease; }
+.time-block.collapsed .time-block-body { max-height:0!important; }
+
+/* TASK */
+.task { background:var(--surface); border:.5px solid var(--border); border-radius:var(--radius); padding:13px 15px; margin-bottom:8px; display:flex; align-items:flex-start; gap:12px; cursor:pointer; transition:transform .12s,background .3s,border-color .3s; }
+.task.done { background:rgba(126,200,160,.07); border-color:rgba(126,200,160,.18); }
+.task:active { transform:scale(.97); }
+.chk { width:24px; height:24px; border-radius:50%; border:1.5px solid rgba(255,255,255,.18); flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center; transition:all .25s cubic-bezier(.4,0,.2,1); }
+.task.done .chk { background:var(--green); border-color:var(--green); transform:scale(1.1); }
+.chk svg { display:none; }
+.task.done .chk svg { display:block; }
+.task-body { flex:1; min-width:0; }
+.task-name { font-size:14px; font-weight:500; margin-bottom:3px; line-height:1.3; transition:all .25s; }
+.task.done .task-name { color:var(--muted); text-decoration:line-through; text-decoration-color:rgba(255,255,255,.15); }
+.task-desc { font-size:12px; color:var(--muted); line-height:1.45; }
+.task.done .task-desc { opacity:.4; }
+.task-badge { display:inline-block; margin-top:5px; font-size:11px; padding:2px 8px; border-radius:6px; background:var(--surface2); color:var(--muted); }
+
+/* SECTION */
+.section { padding:0 20px; margin-bottom:16px; }
+.sec-label { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+
+/* PAGES */
+.page { display:none; }
+.page.active { display:block; animation:fadein .2s ease; }
+@keyframes fadein { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
+
+/* BOTTOM NAV */
+.bnav { position:fixed; bottom:0; left:0; right:0; max-width:430px; margin:0 auto; background:rgba(13,13,15,.96); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-top:.5px solid var(--border); display:flex; padding:10px 0 24px; z-index:100; }
+.nitem { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; padding:4px 0; transition:transform .15s; }
+.nitem:active { transform:scale(.88); }
+.nitem .ico { font-size:19px; line-height:1; }
+.nitem .lbl { font-size:9px; color:var(--muted); }
+.nitem.active .lbl { color:var(--accent); }
+
+/* PLAN */
+.ptabs { display:flex; gap:8px; padding:0 20px 16px; overflow-x:auto; scrollbar-width:none; }
+.ptabs::-webkit-scrollbar { display:none; }
+.ptab { flex-shrink:0; padding:7px 14px; border-radius:20px; font-size:13px; border:.5px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; transition:all .2s; }
+.ptab.active { background:var(--accent); color:#0d0d0f; font-weight:700; border-color:var(--accent); }
+.pcard { background:var(--surface); border:.5px solid var(--border); border-radius:var(--radius); padding:16px; margin:0 20px 12px; }
+.pcard-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; gap:8px; }
+.pcard-title { font-size:15px; font-weight:600; }
+.pcard-badge { font-size:11px; padding:3px 10px; border-radius:20px; background:rgba(232,180,203,.1); color:var(--accent); flex-shrink:0; }
+.pcard-badge.g { background:rgba(126,200,160,.1); color:var(--green); }
+.pcard-badge.y { background:rgba(201,169,110,.1); color:var(--accent2); }
+.plist { list-style:none; }
+.plist li { font-size:13px; color:var(--muted); line-height:1.5; padding:5px 0 5px 14px; position:relative; border-bottom:.5px solid var(--border); }
+.plist li::before { content:"–"; position:absolute; left:0; color:rgba(255,255,255,.18); }
+.plist li:last-child { border-bottom:none; }
+.plist li strong { color:var(--text); font-weight:500; }
+.phase { display:none; }
+.phase.active { display:block; }
+
+/* ACHIEVEMENTS */
+.ach-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:0 20px; margin-bottom:16px; }
+.ach-card { background:var(--surface); border:.5px solid var(--border); border-radius:var(--radius); padding:14px 10px; display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; transition:all .3s; position:relative; overflow:hidden; }
+.ach-card.unlocked { border-color:rgba(232,180,203,.35); background:rgba(232,180,203,.05); }
+.ach-icon { font-size:26px; line-height:1; filter:grayscale(1) brightness(.5); transition:filter .3s; }
+.ach-card.unlocked .ach-icon { filter:none; }
+.ach-name { font-size:11px; font-weight:600; color:var(--muted); line-height:1.3; transition:color .3s; }
+.ach-card.unlocked .ach-name { color:var(--text); }
+.ach-desc { font-size:10px; color:var(--muted); line-height:1.3; opacity:.7; }
+.ach-lock { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:18px; opacity:.2; }
+.ach-card.unlocked .ach-lock { display:none; }
+.new-badge { position:absolute; top:6px; right:6px; background:var(--accent); color:#0d0d0f; font-size:8px; font-weight:700; padding:2px 5px; border-radius:6px; }
+
+/* CHALLENGES */
+.chal-card { background:var(--surface); border:.5px solid rgba(201,169,110,.25); border-radius:var(--radius); padding:16px; margin:0 20px 10px; }
+.chal-card.done-chal { border-color:rgba(126,200,160,.3); background:rgba(126,200,160,.04); }
+.chal-top { display:flex; align-items:flex-start; gap:12px; margin-bottom:10px; }
+.chal-icon { font-size:24px; flex-shrink:0; }
+.chal-name { font-size:14px; font-weight:600; margin-bottom:2px; }
+.chal-desc { font-size:12px; color:var(--muted); line-height:1.4; }
+.chal-prog-bar { height:4px; background:var(--surface2); border-radius:10px; overflow:hidden; margin:8px 0 4px; }
+.chal-prog-fill { height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent)); border-radius:10px; transition:width .4s; }
+.chal-prog-text { font-size:11px; color:var(--muted); }
+.chal-reward { display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--accent); background:rgba(232,180,203,.1); padding:3px 8px; border-radius:6px; margin-top:8px; }
+
+/* CALENDAR */
+.cal-wrap { margin:0 20px 20px; }
+.cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.cal-month { font-size:15px; font-weight:600; }
+.cal-nav { background:var(--surface); border:.5px solid var(--border); border-radius:8px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; color:var(--muted); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.cal-dow { font-size:10px; color:var(--muted); text-align:center; padding:4px 0; }
+.cal-day { aspect-ratio:1; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--muted); }
+.cal-day.today { border:1px solid rgba(232,180,203,.5); color:var(--accent); font-weight:600; }
+.cal-day.full { background:rgba(126,200,160,.2); color:var(--green); }
+.cal-day.partial { background:rgba(201,169,110,.15); color:var(--accent2); }
+.cal-day.empty-day { opacity:0; pointer-events:none; }
+
+/* MOOD */
+.mood-row { display:flex; gap:8px; padding:0 20px; margin-bottom:20px; justify-content:center; }
+.mood-btn { flex:1; max-width:60px; background:var(--surface); border:.5px solid var(--border); border-radius:12px; padding:10px 4px; display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; transition:all .2s; }
+.mood-btn.selected { border-color:rgba(232,180,203,.5); background:rgba(232,180,203,.08); }
+.mood-btn .mico { font-size:22px; }
+.mood-btn .mlbl { font-size:10px; color:var(--muted); }
+.mood-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; padding:0 20px; margin-bottom:20px; }
+.mood-dot { aspect-ratio:1; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:14px; background:var(--surface); border:.5px solid var(--border); }
+
+/* FINANCE */
+.fin-row { display:flex; gap:10px; margin:0 20px 16px; }
+.fin-card { flex:1; background:var(--surface); border:.5px solid var(--border); border-radius:var(--radius); padding:14px; }
+.fin-label { font-size:11px; color:var(--muted); margin-bottom:4px; }
+.fin-val { font-size:18px; font-weight:700; }
+.fin-val.pos { color:var(--green); }
+.fin-val.neg { color:#e87c7c; }
+
+/* TOAST */
+.toast { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-80px); background:var(--surface); border:.5px solid rgba(232,180,203,.3); border-radius:12px; padding:12px 20px; font-size:13px; font-weight:500; color:var(--text); z-index:998; transition:transform .3s cubic-bezier(.4,0,.2,1); white-space:nowrap; box-shadow:0 8px 32px rgba(0,0,0,.4); max-width:90vw; text-align:center; white-space:normal; }
+.toast.show { transform:translateX(-50%) translateY(0); }
+.confetti-wrap { position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; z-index:999; overflow:hidden; }
+.cp { position:absolute; opacity:0; animation:cffall 1.3s ease-in forwards; border-radius:2px; }
+@keyframes cffall { 0%{transform:translateY(-10px) rotate(0deg);opacity:1} 100%{transform:translateY(100vh) rotate(720deg);opacity:0} }
+
+.mot-banner { margin:0 20px 12px; background:#1a1510; border:.5px solid rgba(201,169,110,.2); border-radius:var(--radius); padding:20px; }
+.mot-banner .q { font-size:16px; font-weight:500; font-style:italic; line-height:1.4; margin-bottom:6px; color:var(--accent2); }
+.mot-banner .s { font-size:12px; color:var(--muted); }
+.info-box { background:rgba(139,184,232,.08); border:.5px solid rgba(139,184,232,.2); border-radius:10px; padding:10px 14px; margin-top:8px; font-size:12px; color:rgba(139,184,232,.9); line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="confetti-wrap" id="confetti"></div>
+<div class="toast" id="toast"></div>
+<div class="app">
+
+<!-- ===== TODAY ===== -->
+<div class="page active" id="pg-today">
+  <div class="header">
+    <div class="header-sub" id="hdate">...</div>
+    <div class="header-title">Привет, <em>красотка</em> 🌿</div>
+  </div>
+
+  <div class="girls-row">
+    <div class="girl-box">
+      <div class="girl-box-label">Сегодня</div>
+      <svg width="58" height="100" viewBox="0 0 58 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <clipPath id="gc1">
+            <ellipse cx="29" cy="10" rx="8.5" ry="9.5"/>
+            <path d="M20.5 17.5Q18 19.5 17 24L15 37Q14 46 15 54Q16 60 18 65L20 76Q22 84 24 91L26 98 32 98 34 91Q36 84 38 76L40 65Q42 60 43 54Q44 46 43 37L41 24Q40 19.5 37.5 17.5Q33 15 29 15Q25 15 20.5 17.5Z"/>
+            <path d="M17 24Q12 26 9 32Q7.5 38 8.5 44Q9.5 50 12 52Q14 53.5 16 52L17 37Z"/>
+            <path d="M41 24Q46 26 49 32Q50.5 38 49.5 44Q48.5 50 46 52Q44 53.5 42 52L41 37Z"/>
+            <path d="M22 93Q20 102 19.5 99.5 23 100 27 100 28 95 29 91Z"/>
+            <path d="M36 93Q38 102 38.5 99.5 35 100 31 100 30 95 29 91Z"/>
+          </clipPath>
+          <mask id="gm1"><rect id="gfr1" x="0" y="100" width="58" height="100" fill="white"/></mask>
+          <linearGradient id="gg1" x1="0" y1="100" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#7ec8a0"/><stop offset="55%" stop-color="#c9a96e"/><stop offset="100%" stop-color="#e8b4cb"/>
+          </linearGradient>
+        </defs>
+        <g clip-path="url(#gc1)" opacity=".1"><rect width="58" height="100" fill="white"/></g>
+        <g clip-path="url(#gc1)" mask="url(#gm1)"><rect width="58" height="100" fill="url(#gg1)"/></g>
+        <ellipse cx="29" cy="6" rx="8.5" ry="5" fill="rgba(240,196,216,.14)"/>
+        <circle cx="26" cy="10" r=".9" fill="rgba(240,196,216,.3)"/>
+        <circle cx="32" cy="10" r=".9" fill="rgba(240,196,216,.3)"/>
+        <path d="M27 13.5Q29 15 31 13.5" stroke="rgba(232,180,203,.35)" stroke-width=".8" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="girl-pct-big"><span id="d-pct">0</span><span>%</span></div>
+      <div class="girl-bar-bg"><div class="girl-bar-fill bar-d" id="d-bar" style="width:0%"></div></div>
+      <div class="girl-sub-text" id="d-sub">0 / 6 задач</div>
+    </div>
+    <div class="girl-box">
+      <div class="girl-box-label">Весь план</div>
+      <svg width="58" height="100" viewBox="0 0 58 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <clipPath id="gc2">
+            <ellipse cx="29" cy="10" rx="8.5" ry="9.5"/>
+            <path d="M20.5 17.5Q18 19.5 17 24L15 37Q14 46 15 54Q16 60 18 65L20 76Q22 84 24 91L26 98 32 98 34 91Q36 84 38 76L40 65Q42 60 43 54Q44 46 43 37L41 24Q40 19.5 37.5 17.5Q33 15 29 15Q25 15 20.5 17.5Z"/>
+            <path d="M17 24Q12 26 9 32Q7.5 38 8.5 44Q9.5 50 12 52Q14 53.5 16 52L17 37Z"/>
+            <path d="M41 24Q46 26 49 32Q50.5 38 49.5 44Q48.5 50 46 52Q44 53.5 42 52L41 37Z"/>
+            <path d="M22 93Q20 102 19.5 99.5 23 100 27 100 28 95 29 91Z"/>
+            <path d="M36 93Q38 102 38.5 99.5 35 100 31 100 30 95 29 91Z"/>
+          </clipPath>
+          <mask id="gm2"><rect id="gfr2" x="0" y="100" width="58" height="100" fill="white"/></mask>
+          <linearGradient id="gg2" x1="0" y1="100" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#c9a96e"/><stop offset="100%" stop-color="#f0c4d8"/>
+          </linearGradient>
+        </defs>
+        <g clip-path="url(#gc2)" opacity=".1"><rect width="58" height="100" fill="white"/></g>
+        <g clip-path="url(#gc2)" mask="url(#gm2)"><rect width="58" height="100" fill="url(#gg2)"/></g>
+        <ellipse cx="29" cy="6" rx="8.5" ry="5" fill="rgba(240,196,216,.14)"/>
+        <circle cx="26" cy="10" r=".9" fill="rgba(240,196,216,.3)"/>
+        <circle cx="32" cy="10" r=".9" fill="rgba(240,196,216,.3)"/>
+        <path d="M27 13.5Q29 15 31 13.5" stroke="rgba(232,180,203,.35)" stroke-width=".8" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="girl-pct-big"><span id="t-pct">0</span><span>%</span></div>
+      <div class="girl-bar-bg"><div class="girl-bar-fill bar-t" id="t-bar" style="width:0%"></div></div>
+      <div class="girl-sub-text" id="t-sub">день 1 из 180</div>
+    </div>
+  </div>
+
+  <div class="streak-row" id="streakRow"></div>
+
+  <!-- MORNING -->
+  <div class="time-block" id="tb-morning">
+    <div class="time-block-header" onclick="toggleBlock('morning')">
+      <span class="time-block-icon">🌅</span>
+      <span class="time-block-title">Утро</span>
+      <span class="time-block-prog" id="prog-morning">0/4</span>
+      <span class="time-block-chevron">▾</span>
+    </div>
+    <div class="time-block-body" id="body-morning" style="max-height:600px">
+      <div id="tasks-morning"></div>
+    </div>
+  </div>
+
+  <!-- DAY -->
+  <div class="time-block" id="tb-day">
+    <div class="time-block-header" onclick="toggleBlock('day')">
+      <span class="time-block-icon">☀️</span>
+      <span class="time-block-title">День</span>
+      <span class="time-block-prog" id="prog-day">0/4</span>
+      <span class="time-block-chevron">▾</span>
+    </div>
+    <div class="time-block-body" id="body-day" style="max-height:600px">
+      <div id="tasks-day"></div>
+    </div>
+  </div>
+
+  <!-- EVENING -->
+  <div class="time-block" id="tb-evening">
+    <div class="time-block-header" onclick="toggleBlock('evening')">
+      <span class="time-block-icon">🌙</span>
+      <span class="time-block-title">Вечер</span>
+      <span class="time-block-prog" id="prog-evening">0/3</span>
+      <span class="time-block-chevron">▾</span>
+    </div>
+    <div class="time-block-body" id="body-evening" style="max-height:600px">
+      <div id="tasks-evening"></div>
+    </div>
+  </div>
+
+  <!-- REGULAR -->
+  <div class="time-block" id="tb-regular">
+    <div class="time-block-header" onclick="toggleBlock('regular')">
+      <span class="time-block-icon">📌</span>
+      <span class="time-block-title">Регулярно</span>
+      <span class="time-block-prog" id="prog-regular">0/3</span>
+      <span class="time-block-chevron">▾</span>
+    </div>
+    <div class="time-block-body" id="body-regular" style="max-height:600px">
+      <div id="tasks-regular"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MOOD ===== -->
+<div class="page" id="pg-mood">
+  <div class="header">
+    <div class="header-sub">Как ты сегодня?</div>
+    <div class="header-title">Настроение <em>и психология</em> 🧠</div>
+  </div>
+
+  <div class="section"><div class="sec-label">Оцени своё настроение сегодня</div></div>
+  <div class="mood-row" id="moodRow">
+    <div class="mood-btn" onclick="setMood(1,this)"><div class="mico">😔</div><div class="mlbl">Плохо</div></div>
+    <div class="mood-btn" onclick="setMood(2,this)"><div class="mico">😕</div><div class="mlbl">Так себе</div></div>
+    <div class="mood-btn" onclick="setMood(3,this)"><div class="mico">😐</div><div class="mlbl">Нейтрально</div></div>
+    <div class="mood-btn" onclick="setMood(4,this)"><div class="mico">🙂</div><div class="mlbl">Хорошо</div></div>
+    <div class="mood-btn" onclick="setMood(5,this)"><div class="mico">😊</div><div class="mlbl">Отлично</div></div>
+  </div>
+
+  <div class="section"><div class="sec-label">Календарь настроения</div></div>
+  <div class="mood-cal-grid" id="moodCalGrid"></div>
+
+  <div class="pcard">
+    <div class="pcard-top"><div class="pcard-title">Ежедневные практики</div></div>
+    <ul class="plist">
+      <li><strong>Утро:</strong> 2 минуты — запиши одну вещь, за которую благодарна</li>
+      <li><strong>Вечер:</strong> запиши главную эмоцию дня и что её вызвало</li>
+      <li>Если накрывает апатия — не борись, просто сделай одно маленькое действие</li>
+      <li>Чрезмерная эмоциональность — перед реакцией сделай 3 глубоких вдоха</li>
+      <li>Депрессия — не изолируй себя, общение помогает даже когда не хочется</li>
+    </ul>
+  </div>
+
+  <div class="pcard" style="margin-top:12px;">
+    <div class="pcard-top"><div class="pcard-title">Долгосрочная цель</div><div class="pcard-badge">6–12 мес.</div></div>
+    <ul class="plist">
+      <li>Найти психолога — хотя бы 1 сессия в месяц для начала</li>
+      <li>Вести дневник эмоций 21 день подряд — формирует привычку</li>
+      <li>Освоить технику «5-4-3-2-1» при панике и тревоге</li>
+      <li>Снизить зависимость настроения от внешних факторов</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== ACHIEVEMENTS ===== -->
+<div class="page" id="pg-ach">
+  <div class="header">
+    <div class="header-sub">Твои достижения</div>
+    <div class="header-title">Коллекция <em>наград</em> 🏆</div>
+  </div>
+  <div class="section" style="margin-bottom:8px;"><div class="sec-label">Значки</div></div>
+  <div class="ach-grid" id="achGrid"></div>
+  <div class="section" style="margin-bottom:8px;margin-top:4px;"><div class="sec-label">Челленджи</div></div>
+  <div id="chalList"></div>
+</div>
+
+<!-- ===== CALENDAR ===== -->
+<div class="page" id="pg-cal">
+  <div class="header">
+    <div class="header-sub">Прогресс</div>
+    <div class="header-title">Календарь <em>побед</em> 📅</div>
+  </div>
+  <div class="cal-wrap">
+    <div class="cal-header">
+      <div class="cal-nav" onclick="calNav(-1)">‹</div>
+      <div class="cal-month" id="calMonth"></div>
+      <div class="cal-nav" onclick="calNav(1)">›</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+  <div class="pcard" style="margin-bottom:12px;">
+    <div class="pcard-top">
+      <div class="pcard-title">Общий прогресс</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
+      <svg width="60" height="104" viewBox="0 0 60 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <clipPath id="gc3">
+            <ellipse cx="30" cy="10.5" rx="9" ry="10"/>
+            <path d="M21 18Q18.5 20 17.5 25L15.5 38Q14.5 48 15.5 57Q16.5 63 18.5 68L20.5 80Q22.5 88 24.5 95L26.5 102 33.5 102 35.5 95Q37.5 88 39.5 80L41.5 68Q43.5 63 44.5 57Q45.5 48 44.5 38L42.5 25Q41.5 20 39 18Q34.5 15.5 30 15.5Q25.5 15.5 21 18Z"/>
+            <path d="M17.5 25Q12 27 9 34Q7 40.5 8 47Q9 53.5 12 55.5Q14 57 16.5 55.5L17.5 38Z"/>
+            <path d="M42.5 25Q48 27 51 34Q53 40.5 52 47Q51 53.5 48 55.5Q46 57 43.5 55.5L42.5 38Z"/>
+          </clipPath>
+          <mask id="gm3"><rect id="gfr3" x="0" y="104" width="60" height="104" fill="white"/></mask>
+          <linearGradient id="gg3" x1="0" y1="104" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#7ec8a0"/><stop offset="45%" stop-color="#c9a96e"/><stop offset="100%" stop-color="#e8b4cb"/>
+          </linearGradient>
+        </defs>
+        <g clip-path="url(#gc3)" opacity=".08"><rect width="60" height="104" fill="white"/></g>
+        <g clip-path="url(#gc3)" mask="url(#gm3)"><rect width="60" height="104" fill="url(#gg3)"/></g>
+        <ellipse cx="30" cy="6" rx="9" ry="5.5" fill="rgba(240,196,216,.15)"/>
+        <circle cx="27" cy="10.5" r="1" fill="rgba(240,196,216,.3)"/>
+        <circle cx="33" cy="10.5" r="1" fill="rgba(240,196,216,.3)"/>
+        <path d="M28 14Q30 15.5 32 14" stroke="rgba(232,180,203,.4)" stroke-width=".9" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div style="flex:1;">
+        <div style="font-size:32px;font-weight:800;" id="big-pct">0<span style="font-size:16px;font-weight:400;color:var(--muted)">%</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">плана выполнено</div>
+        <div class="girl-bar-bg"><div class="girl-bar-fill bar-t" id="big-bar" style="width:0%"></div></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px;" id="big-days">День 1 из 180</div>
+      </div>
+    </div>
+  </div>
+  <div class="pcard">
+    <div class="pcard-top"><div class="pcard-title">Легенда</div></div>
+    <ul class="plist">
+      <li><span style="color:var(--green)">●</span> Зелёный — все задачи выполнены</li>
+      <li><span style="color:var(--accent2)">●</span> Золотой — часть задач выполнена</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== PLAN ===== -->
+<div class="page" id="pg-plan">
+  <div class="header">
+    <div class="header-sub">Полный план</div>
+    <div class="header-title">Твой путь <em>к цели</em></div>
+  </div>
+  <div class="ptabs">
+    <div class="ptab active" onclick="switchPhase('p1',this)">Нед. 1–2</div>
+    <div class="ptab" onclick="switchPhase('p2',this)">Мес. 1–2</div>
+    <div class="ptab" onclick="switchPhase('p3',this)">Мес. 3–6</div>
+    <div class="ptab" onclick="switchPhase('p4',this)">Долгосрочно</div>
+  </div>
+
+  <div class="phase active" id="p1">
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">Гигиена и чистота</div><div class="pcard-badge">Неделя 1</div></div><ul class="plist"><li>Душ каждый день в одно и то же время</li><li>Дезодорант на сухую кожу после душа</li><li>Нижнее бельё меняется каждый день</li><li>Чистить зубы 2 раза, жвачка после еды</li></ul></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">Подмышки — эпилятор</div><div class="pcard-badge">Неделя 1</div></div><ul class="plist"><li>Первая эпиляция после душа — кожа мягче</li><li>После — успокаивающий крем, ждать 20 мин</li><li>Повторять раз в 5–7 дней</li><li>Если тёмные — 1 сеанс отбеливания в салоне</li></ul></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">Одежда</div><div class="pcard-badge">Неделя 1</div></div><ul class="plist"><li>Только чистые вещи, без запаха и пятен</li><li>Гладить всё что мнётся перед выходом</li><li>Убрать вещи с катышками и дырками</li></ul></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">Режим сна, воды, питания</div><div class="pcard-badge">Неделя 2</div></div><ul class="plist"><li>Ложиться и вставать в одно время, даже в выходные</li><li>7–8 часов сна минимум</li><li>1.5–2 литра воды в день</li><li><strong>Завтрак:</strong> каша / яйца + овощи + чай без сахара (~350–400 ккал)</li><li><strong>Обед:</strong> белок (курица/рыба) + крупа + салат (~500–600 ккал)</li><li><strong>Ужин:</strong> лёгкий — рыба или творог + овощи (~300–350 ккал)</li><li><strong>Исключить:</strong> фастфуд, газировку, сахар, алкоголь, чипсы</li><li><strong>Добавить:</strong> орехи, яйца, рыбу, зелень, ягоды, оливковое масло</li></ul></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">💄 Начать разбираться в макияже</div><div class="pcard-badge">Неделя 2</div></div><ul class="plist"><li><strong>Минимальный набор для начала:</strong> BB-крем или тональник, консилер, тушь, бальзам для губ</li><li><strong>Следующий этап:</strong> румяна, карандаш для бровей, хайлайтер</li><li><strong>Инструменты:</strong> 2–3 кисточки (для тона, для растушёвки, для румян), спонж-бьюти блендер</li><li>Смотреть туториалы на YouTube — «макияж для начинающих», «натуральный макияж»</li><li>Начать с лёгкого дневного макияжа, не перегружать</li><li>Очищать кисти раз в неделю, смывать макияж каждый вечер</li></ul></div>
+  </div>
+
+  <div class="phase" id="p2">
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">🏠 Тренировки дома — Кардио</div><div class="pcard-badge g">Пн / Ср</div></div><ul class="plist"><li><strong>Разминка 5 мин:</strong> марш на месте, вращения руками, наклоны</li><li><strong>Прыжки на месте</strong> — 3×30 сек, отдых 20 сек</li><li><strong>Бёрпи (упрощённые)</strong> — 3×8 раз</li><li><strong>Бег на месте с высоким подниманием колен</strong> — 3×30 сек</li><li><strong>Прыжки в стороны</strong> — 3×20 раз</li><li><strong>Заминка 5 мин:</strong> растяжка ног, спины, шеи</li><li><strong>Время:</strong> 30–35 минут</li></ul><div class="info-box">Кардио сжигает калории и улучшает выносливость. Делай в хорошей обуви или на коврике.</div></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">💪 Тренировки дома — Силовая</div><div class="pcard-badge y">Вт / Пт</div></div><ul class="plist"><li><strong>Разминка 5 мин:</strong> суставная гимнастика</li><li><strong>Приседания</strong> — 4×15 (можно с бутылками воды как гантелями)</li><li><strong>Ягодичный мостик</strong> — 4×20 (можно со словарём на животе для веса)</li><li><strong>Выпады поочерёдно</strong> — 3×12 на каждую ногу</li><li><strong>Отжимания с колен</strong> — 3×10</li><li><strong>Планка</strong> — 3×30–45 сек</li><li><strong>Подъём корпуса (скручивания)</strong> — 3×15</li><li><strong>Время:</strong> 40–45 минут</li></ul><div class="info-box">Силовая формирует мышцы. Прогрессия: каждые 2 недели добавляй 1 повтор или 1 подход.</div></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">📚 Учёба и саморазвитие</div><div class="pcard-badge">С 1-го месяца</div></div><ul class="plist"><li><strong>Ежедневно:</strong> читать 10–15 минут книгу (любую — художественную или полезную)</li><li><strong>Рекомендации для начала:</strong> «Атомные привычки» Клира, «Сила воли» Макгонигал</li><li><strong>Цель на 3 месяца:</strong> прочитать 2–3 книги</li><li>Подписаться на 1–2 полезных канала по интересам</li><li>Учиться чему-то новому 30 мин в неделю (курс, урок, видео)</li></ul></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">💰 Финансовая грамотность</div><div class="pcard-badge">С 1-го месяца</div></div><ul class="plist"><li><strong>С каждой зарплаты откладывать минимум 10%</strong> — сразу, до трат</li><li><strong>Распределение:</strong> 50% — базовые расходы, 30% — личное, 20% — накопления</li><li>Вести учёт трат — любое приложение (CoinKeeper, Дзен-мани)</li><li>Создать финансовую подушку — 3 месяца расходов</li><li>Не брать кредиты на то, что не является необходимостью</li></ul></div>
+  </div>
+
+  <div class="phase" id="p3">
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">Форма тела</div><div class="pcard-badge">3–6 месяцев</div></div><ul class="plist"><li>Тренировки уже привычка — добавить сложность упражнений</li><li>Кардио: добавить бег на улице 2 раза в неделю 20–30 мин</li><li>Ягодицы и ноги заметно плотнее и округлее</li><li>Дефицит калорий –200–300 ккал, не больше</li></ul></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">🧠 Психологическое состояние</div><div class="pcard-badge">Постоянно</div></div><ul class="plist"><li>Регулярные сессии с психологом (хотя бы раз в месяц)</li><li>Дневник эмоций — вести каждый день</li><li>Освоить медитацию — 5–10 мин утром (приложение Insight Timer)</li><li>Снижение уровня тревоги через физическую активность</li></ul></div>
+  </div>
+
+  <div class="phase" id="p4">
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">🦷 Зубы и прикус</div><div class="pcard-badge">1–2 года</div></div><ul class="plist"><li>Не пропускать визиты к ортодонту</li><li>Ирригатор + специальная щётка для брекетов</li><li>После снятия — ретейнер обязательно</li><li>Отбеливание только после снятия брекетов</li></ul></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">🏠 Переехать в своё жильё</div><div class="pcard-badge">1.5–3 года</div></div><ul class="plist"><li><strong>Шаг 1 (сейчас):</strong> начать откладывать 15–20% дохода ежемесячно</li><li><strong>Шаг 2 (3–6 мес.):</strong> изучить рынок аренды — цены, районы, условия</li><li><strong>Шаг 3 (6–12 мес.):</strong> накопить на 3–4 месяца депозита + первый месяц</li><li><strong>Шаг 4 (1–1.5 года):</strong> найти подходящий вариант, переехать</li><li>Параллельно: закрыть все долги если есть, улучшить доход</li><li>Список необходимого для квартиры составить заранее — это мотивирует</li></ul></div>
+    <div class="pcard"><div class="pcard-top"><div class="pcard-title">📈 Карьера и доход</div><div class="pcard-badge">1–2 года</div></div><ul class="plist"><li>Определить желаемую сферу и двигаться в её сторону</li><li>Повышать квалификацию — курсы, сертификаты</li><li>Цель: увеличить доход минимум на 30% за год</li></ul></div>
+    <div class="mot-banner"><div class="q">Через год ты не узнаешь себя в зеркале</div><div class="s">Каждый маленький шаг сегодня — это она завтра 💕</div></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="bnav">
+  <div class="nitem active" onclick="switchPage('today',this)"><div class="ico">✦</div><div class="lbl">Сегодня</div></div>
+  <div class="nitem" onclick="switchPage('mood',this)"><div class="ico">🧠</div><div class="lbl">Настроение</div></div>
+  <div class="nitem" onclick="switchPage('ach',this)"><div class="ico">🏆</div><div class="lbl">Награды</div></div>
+  <div class="nitem" onclick="switchPage('cal',this)"><div class="ico">📅</div><div class="lbl">Календарь</div></div>
+  <div class="nitem" onclick="switchPage('plan',this)"><div class="ico">◈</div><div class="lbl">План</div></div>
+</div>
+</div><!-- /app -->
+
+<script>
+// ============================================================
+// TASKS
+// ============================================================
+var TASKS = [
+  // MORNING
+  {id:'shower',    name:'Душ',                      desc:'Каждый день в одно и то же время',              badge:'ежедневно', slot:'morning'},
+  {id:'teeth_m',   name:'Почистить зубы',            desc:'2 минуты, фторсодержащая паста',                badge:'утро',      slot:'morning'},
+  {id:'deo',       name:'Дезодорант',                desc:'На сухую кожу после душа',                      badge:'утро',      slot:'morning'},
+  {id:'breakfast', name:'Завтрак',                   desc:'Каша или яйца + овощи. ~350–400 ккал. Без сахара', badge:'утро',   slot:'morning'},
+  // DAY
+  {id:'water',     name:'1.5–2 литра воды',          desc:'Пей равномерно в течение дня',                  badge:'весь день', slot:'day'},
+  {id:'lunch',     name:'Обед',                      desc:'Курица/рыба + крупа + салат. ~500–600 ккал',    badge:'день',      slot:'day'},
+  {id:'read',      name:'Читать 10–15 минут',        desc:'Любую книгу — художественную или полезную',     badge:'ежедневно', slot:'day'},
+  {id:'workout',   name:'Тренировка',                desc:'Пн/Вт/Ср/Пт — кардио или силовая (план во вкладке «Plan»)', badge:'4×в нед.', slot:'day'},
+  // EVENING
+  {id:'teeth_e',   name:'Почистить зубы вечером',    desc:'Перед сном, обязательно',                       badge:'вечер',     slot:'evening'},
+  {id:'dinner',    name:'Ужин',                      desc:'Рыба или творог + овощи. ~300–350 ккал. До 19:00', badge:'вечер',  slot:'evening'},
+  {id:'diary',     name:'Дневник эмоций',            desc:'Запиши главную эмоцию дня и что её вызвало',    badge:'вечер',     slot:'evening'},
+  {id:'sleep',     name:'Лечь спать вовремя',        desc:'7–8 часов. Одно и то же время каждый день',     badge:'вечер',     slot:'evening'},
+  // REGULAR
+  {id:'underwear', name:'Сменить бельё',             desc:'Каждый день без исключений',                    badge:'ежедневно', slot:'regular'},
+  {id:'epilator',  name:'Эпилятор — подмышки',      desc:'После душа, крем после, ждать 20 мин',           badge:'раз в 5–7 дней', slot:'regular'},
+  {id:'clothes',   name:'Проверить одежду',          desc:'Чистая, поглажена, без запаха и катышков',      badge:'перед выходом',  slot:'regular'},
+];
+
+var ACHIEVEMENTS = [
+  {id:'first',    icon:'🌸', name:'Первый шаг',        desc:'Отметь первую задачу',              cond:function(s){return s.totalDone>=1;}},
+  {id:'day1',     icon:'⭐', name:'Идеальный день',     desc:'Все задачи за день',                cond:function(s){return s.perfectDays>=1;}},
+  {id:'streak3',  icon:'🔥', name:'3 дня подряд',      desc:'3 дня без пропусков',               cond:function(s){return s.streak>=3;}},
+  {id:'streak7',  icon:'💫', name:'Неделя!',            desc:'7 дней подряд',                     cond:function(s){return s.streak>=7;}},
+  {id:'streak14', icon:'🌙', name:'2 недели',           desc:'14 дней подряд',                    cond:function(s){return s.streak>=14;}},
+  {id:'streak30', icon:'👑', name:'Месяц победы',       desc:'30 дней подряд!',                   cond:function(s){return s.streak>=30;}},
+  {id:'workout5', icon:'💪', name:'5 тренировок',       desc:'Проведи 5 тренировок',              cond:function(s){return s.workouts>=5;}},
+  {id:'workout20',icon:'🏋️',name:'20 тренировок',     desc:'Проведи 20 тренировок',             cond:function(s){return s.workouts>=20;}},
+  {id:'water7',   icon:'💧', name:'Водный режим',       desc:'7 дней пьёшь воду',                 cond:function(s){return s.waterDays>=7;}},
+  {id:'read7',    icon:'📚', name:'Читатель',           desc:'7 дней читала книгу',               cond:function(s){return s.readDays>=7;}},
+  {id:'mood7',    icon:'🧠', name:'Осознанность',       desc:'7 дней отмечала настроение',        cond:function(s){return s.moodDays>=7;}},
+  {id:'total10',  icon:'✨', name:'10% плана',          desc:'10% выполнено',                     cond:function(s){return s.totalPct>=10;}},
+  {id:'total25',  icon:'🌟', name:'Четверть пути',      desc:'25% плана позади!',                 cond:function(s){return s.totalPct>=25;}},
+  {id:'total50',  icon:'🦋', name:'Половина пути',      desc:'50% — ты молодец!',                 cond:function(s){return s.totalPct>=50;}},
+  {id:'breakfast7',icon:'🍳',name:'Завтракатель',       desc:'7 дней ела завтрак',                cond:function(s){return s.breakfastDays>=7;}},
+  {id:'diary7',   icon:'📓', name:'Дневник',            desc:'7 дней вела дневник',               cond:function(s){return s.diaryDays>=7;}},
+];
+
+var CHALLENGES = [
+  {id:'ch1', icon:'💦', name:'Водный марафон',      desc:'Пей воду 7 дней подряд',           total:7,  key:'waterDays',     reward:'значок 💧'},
+  {id:'ch2', icon:'🏃', name:'12 тренировок',       desc:'Проведи 12 тренировок',            total:12, key:'workouts',      reward:'значок 💪'},
+  {id:'ch3', icon:'📚', name:'Читательский марафон',desc:'Читай 14 дней подряд',             total:14, key:'readDays',      reward:'значок 📚'},
+  {id:'ch4', icon:'✨', name:'Идеальная неделя',    desc:'7 идеальных дней подряд',          total:7,  key:'perfectDays',   reward:'значок 👑'},
+  {id:'ch5', icon:'🌸', name:'Первые 30 дней',      desc:'Не пропускай план 30 дней',        total:30, key:'streak',        reward:'значок 🌸'},
+  {id:'ch6', icon:'📓', name:'Дневник эмоций',      desc:'Веди дневник 21 день',             total:21, key:'diaryDays',     reward:'значок 🧠'},
+  {id:'ch7', icon:'🍳', name:'Завтрак чемпиона',    desc:'Завтракай 10 дней подряд',         total:10, key:'breakfastDays', reward:'значок 🥗'},
+];
+
+// ============================================================
+// STATE & STORAGE
+// ============================================================
+var DEFAULT_STATE = {
+  done:{}, streak:0, perfectDays:0, totalDone:0, workouts:0, waterDays:0,
+  readDays:0, diaryDays:0, breakfastDays:0, clothesDays:0, moodDays:0,
+  earlyOpen:false, totalPct:0, dayNumber:1, unlockedAch:{}, calData:{},
+  moodData:{}, newAch:{}, lastDate:''
+};
+
+var state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+function saveState() {
+  var ok = false;
+  try { localStorage.setItem('bp2_state', JSON.stringify(state)); ok = true; } catch(e){}
+  if (!ok) try { sessionStorage.setItem('bp2_state', JSON.stringify(state)); } catch(e){}
+}
+
+function loadState() {
+  var raw = null;
+  try { raw = localStorage.getItem('bp2_state'); } catch(e){}
+  if (!raw) try { raw = sessionStorage.getItem('bp2_state'); } catch(e){}
+  if (raw) {
+    try {
+      var parsed = JSON.parse(raw);
+      for (var k in parsed) { if (DEFAULT_STATE.hasOwnProperty(k)) state[k] = parsed[k]; }
+    } catch(e){}
+  }
+}
+
+function checkNewDay() {
+  var today = todayKey();
+  if (state.lastDate && state.lastDate !== today) {
+    // save yesterday
+    var prev = state.lastDate;
+    var dailyIds = TASKS.filter(function(t){ return t.slot !== 'regular'; }).map(function(t){ return t.id; });
+    var dc = dailyIds.filter(function(id){ return state.done[id]; }).length;
+    state.calData[prev] = {done: dc, total: dailyIds.length};
+    // update stats
+    if (dc >= dailyIds.length) state.perfectDays++;
+    // streak
+    var s = 0, d = new Date();
+    d.setDate(d.getDate() - 1); // yesterday
+    while(true) {
+      var k = d.toISOString().slice(0,10);
+      var cd = state.calData[k];
+      if (cd && cd.done >= cd.total) { s++; d.setDate(d.getDate()-1); } else break;
+      if (s > 365) break;
+    }
+    state.streak = s;
+    state.dayNumber++;
+    state.totalPct = Math.min(100, state.perfectDays * 0.556);
+    state.done = {};
+    state.newAch = {};
+  }
+  state.lastDate = today;
+  if (!state.calData) state.calData = {};
+  if (!state.moodData) state.moodData = {};
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function todayKey() { return new Date().toISOString().slice(0,10); }
+
+function getDateStr() {
+  var d = new Date();
+  var days = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+  var months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  return days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()];
+}
+
+function spawnConfetti(x, y) {
+  var colors = ['#e8b4cb','#c9a96e','#7ec8a0','#f0c4d8','#fff','#ffd700'];
+  var wrap = document.getElementById('confetti');
+  for (var i=0; i<18; i++) {
+    var p = document.createElement('div');
+    p.className = 'cp';
+    p.style.left = (x - 20 + Math.random()*40) + 'px';
+    p.style.top = (y - 10) + 'px';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.width = (5 + Math.random()*7) + 'px';
+    p.style.height = (5 + Math.random()*7) + 'px';
+    p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    p.style.animationDelay = (Math.random()*0.25) + 's';
+    p.style.animationDuration = (0.9 + Math.random()*0.5) + 's';
+    wrap.appendChild(p);
+    setTimeout(function(el){ el.remove(); }, 1600, p);
+  }
+}
+
+var toastTimer;
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2800);
+}
+
+function updateGirl(frId, pct, h) {
+  var r = document.getElementById(frId);
+  if (!r) return;
+  var y = h - (h * pct / 100);
+  r.setAttribute('y', y);
+  r.setAttribute('height', (h - y + 5));
+}
+
+// ============================================================
+// CHECKS & STATS
+// ============================================================
+function recalcStats() {
+  var dailyIds = TASKS.filter(function(t){ return t.slot !== 'regular'; }).map(function(t){ return t.id; });
+  var dc = dailyIds.filter(function(id){ return state.done[id]; }).length;
+  state.calData[todayKey()] = {done: dc, total: dailyIds.length};
+
+  if (state.done['water']) state.waterDays = (state.waterDays || 0);
+  if (state.done['read'])  state.readDays  = (state.readDays  || 0);
+  if (state.done['diary']) state.diaryDays = (state.diaryDays || 0);
+  if (state.done['breakfast']) state.breakfastDays = (state.breakfastDays || 0);
+
+  state.totalPct = Math.min(100, (state.perfectDays || 0) * 0.556);
+}
+
+function countTodayDone(slot) {
+  var tasks = slot === 'all'
+    ? TASKS.filter(function(t){ return t.slot !== 'regular'; })
+    : TASKS.filter(function(t){ return t.slot === slot; });
+  return tasks.filter(function(t){ return state.done[t.id]; }).length;
+}
+
+function checkAchievements() {
+  ACHIEVEMENTS.forEach(function(a) {
+    if (!state.unlockedAch[a.id] && a.cond(state)) {
+      state.unlockedAch[a.id] = true;
+      state.newAch[a.id] = true;
+      setTimeout(function(){ showToast('🏆 Новая награда: ' + a.name + ' ' + a.icon); }, 500);
+    }
+  });
+}
+
+// ============================================================
+// RENDER TODAY
+// ============================================================
+function renderToday() {
+  document.getElementById('hdate').textContent = getDateStr();
+
+  var dailyTasks = TASKS.filter(function(t){ return t.slot !== 'regular'; });
+  var dc = dailyTasks.filter(function(t){ return state.done[t.id]; }).length;
+  var total = dailyTasks.length;
+  var pct = total ? Math.round(dc/total*100) : 0;
+
+  document.getElementById('d-pct').textContent = pct;
+  document.getElementById('d-bar').style.width = pct + '%';
+  document.getElementById('d-sub').textContent = dc + ' / ' + total + ' задач';
+  updateGirl('gfr1', pct, 100);
+
+  var tp = state.totalPct || 0;
+  document.getElementById('t-pct').textContent = Math.round(tp);
+  document.getElementById('t-bar').style.width = tp + '%';
+  document.getElementById('t-sub').textContent = 'день ' + (state.dayNumber||1) + ' из 180';
+  updateGirl('gfr2', tp, 100);
+
+  // streak row
+  var row = document.getElementById('streakRow');
+  row.innerHTML = '';
+  var dayNames = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+  var now = new Date();
+  for (var i=6; i>=0; i--) {
+    var d2 = new Date(now); d2.setDate(now.getDate()-i);
+    var key = d2.toISOString().slice(0,10);
+    var cd = state.calData[key];
+    var cls = 'sday' + (i===0?' today':'');
+    if (cd) { cls += cd.done >= cd.total ? ' filled' : ' partial'; }
+    row.innerHTML += '<div class="'+cls+'"><div class="dn">'+dayNames[d2.getDay()]+'</div><div class="dot"></div></div>';
+  }
+
+  // render slots
+  ['morning','day','evening','regular'].forEach(function(slot) {
+    var tasks = TASKS.filter(function(t){ return t.slot === slot; });
+    var el = document.getElementById('tasks-' + slot);
+    el.innerHTML = '';
+    tasks.forEach(function(t) {
+      var isDone = !!state.done[t.id];
+      var div = document.createElement('div');
+      div.className = 'task' + (isDone ? ' done' : '');
+      div.innerHTML =
+        '<div class="chk"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#0d0d0f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+        '<div class="task-body"><div class="task-name">'+t.name+'</div><div class="task-desc">'+t.desc+'</div><span class="task-badge">'+t.badge+'</span></div>';
+      (function(task, d) {
+        d.addEventListener('click', function(e) {
+          var wasNotDone = !state.done[task.id];
+          state.done[task.id] = !state.done[task.id];
+          if (wasNotDone) {
+            state.totalDone = (state.totalDone||0) + 1;
+            if (task.id==='workout') state.workouts = (state.workouts||0) + 1;
+            if (task.id==='water')   state.waterDays = (state.waterDays||0) + 1;
+            if (task.id==='read')    state.readDays  = (state.readDays||0)  + 1;
+            if (task.id==='diary')   state.diaryDays = (state.diaryDays||0) + 1;
+            if (task.id==='breakfast') state.breakfastDays = (state.breakfastDays||0) + 1;
+            var rect = d.getBoundingClientRect();
+            spawnConfetti(rect.left + rect.width/2, rect.top + 20);
+          }
+          recalcStats();
+          checkAchievements();
+          saveState();
+          renderToday();
+        });
+      })(t, div);
+      el.appendChild(div);
+    });
+    // progress label
+    var done2 = tasks.filter(function(t){ return state.done[t.id]; }).length;
+    var prog = document.getElementById('prog-' + slot);
+    if (prog) prog.textContent = done2 + '/' + tasks.length;
+  });
+}
+
+// ============================================================
+// TOGGLE BLOCKS
+// ============================================================
+function toggleBlock(slot) {
+  var tb = document.getElementById('tb-' + slot);
+  var body = document.getElementById('body-' + slot);
+  if (tb.classList.contains('collapsed')) {
+    tb.classList.remove('collapsed');
+    body.style.maxHeight = '600px';
+  } else {
+    tb.classList.add('collapsed');
+    body.style.maxHeight = '0';
+  }
+}
+
+// ============================================================
+// MOOD
+// ============================================================
+var MOOD_ICONS = ['','😔','😕','😐','🙂','😊'];
+
+function setMood(val, el) {
+  state.moodData[todayKey()] = val;
+  state.moodDays = Object.keys(state.moodData).length;
+  checkAchievements();
+  saveState();
+  document.querySelectorAll('.mood-btn').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+  renderMoodCal();
+  showToast('Настроение сохранено ' + MOOD_ICONS[val]);
+}
+
+function renderMoodCal() {
+  var grid = document.getElementById('moodCalGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  var now = new Date();
+  // last 28 days
+  for (var i=27; i>=0; i--) {
+    var d = new Date(now); d.setDate(now.getDate()-i);
+    var key = d.toISOString().slice(0,10);
+    var mood = state.moodData[key];
+    var div = document.createElement('div');
+    div.className = 'mood-dot';
+    div.textContent = mood ? MOOD_ICONS[mood] : '';
+    if (!mood) div.style.opacity = '0.3';
+    grid.appendChild(div);
+  }
+  // restore today selection
+  var todayMood = state.moodData[todayKey()];
+  if (todayMood) {
+    var btns = document.querySelectorAll('.mood-btn');
+    btns.forEach(function(b, i){ if (i === todayMood-1) b.classList.add('selected'); });
+  }
+}
+
+// ============================================================
+// ACHIEVEMENTS
+// ============================================================
+function renderAchievements() {
+  var grid = document.getElementById('achGrid');
+  grid.innerHTML = '';
+  ACHIEVEMENTS.forEach(function(a) {
+    var unlocked = !!state.unlockedAch[a.id];
+    var isNew = !!state.newAch[a.id];
+    var div = document.createElement('div');
+    div.className = 'ach-card' + (unlocked ? ' unlocked' : '');
+    div.innerHTML =
+      (isNew && unlocked ? '<div class="new-badge">NEW</div>' : '') +
+      '<div class="ach-icon">'+a.icon+'</div>' +
+      '<div class="ach-name">'+a.name+'</div>' +
+      '<div class="ach-desc">'+a.desc+'</div>' +
+      (!unlocked ? '<div class="ach-lock">🔒</div>' : '');
+    grid.appendChild(div);
+  });
+
+  var cl = document.getElementById('chalList');
+  cl.innerHTML = '';
+  CHALLENGES.forEach(function(c) {
+    var cur = Math.min(state[c.key]||0, c.total);
+    var pct = Math.round(cur/c.total*100);
+    var isDone = cur >= c.total;
+    var div = document.createElement('div');
+    div.className = 'chal-card' + (isDone ? ' done-chal' : '');
+    div.innerHTML =
+      '<div class="chal-top"><div class="chal-icon">'+c.icon+'</div>' +
+      '<div><div class="chal-name">'+c.name+(isDone?' ✅':'')+'</div><div class="chal-desc">'+c.desc+'</div></div></div>' +
+      '<div class="chal-prog-bar"><div class="chal-prog-fill" style="width:'+pct+'%"></div></div>' +
+      '<div class="chal-prog-text">'+cur+' / '+c.total+(isDone?' — выполнено!':'')+'</div>' +
+      '<div class="chal-reward">🎁 Награда: '+c.reward+'</div>';
+    cl.appendChild(div);
+  });
+}
+
+// ============================================================
+// CALENDAR
+// ============================================================
+var calOffset = 0;
+function renderCalendar() {
+  var now = new Date();
+  var y = now.getFullYear(), m = now.getMonth() + calOffset;
+  while(m<0){m+=12;y--;} while(m>11){m-=12;y++;}
+  var months=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  document.getElementById('calMonth').textContent = months[m] + ' ' + y;
+  var grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(function(d){ var el=document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el); });
+  var firstDay=(new Date(y,m,1).getDay()+6)%7;
+  for(var i=0;i<firstDay;i++){ var el=document.createElement('div'); el.className='cal-day empty-day'; grid.appendChild(el); }
+  var dim=new Date(y,m+1,0).getDate(), todayStr=todayKey();
+  for(var d2=1;d2<=dim;d2++){
+    var ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
+    var cd=state.calData[ds];
+    var el=document.createElement('div');
+    var cls='cal-day';
+    if(ds===todayStr) cls+=' today';
+    if(cd){ if(cd.done>=cd.total) cls+=' full'; else if(cd.done>0) cls+=' partial'; }
+    el.className=cls; el.textContent=d2; grid.appendChild(el);
+  }
+  var tp=state.totalPct||0;
+  document.getElementById('big-pct').innerHTML=Math.round(tp)+'<span style="font-size:16px;font-weight:400;color:var(--muted)">%</span>';
+  document.getElementById('big-bar').style.width=tp+'%';
+  document.getElementById('big-days').textContent='День '+(state.dayNumber||1)+' из 180';
+  updateGirl('gfr3', tp, 104);
+}
+function calNav(dir){ calOffset+=dir; renderCalendar(); }
+
+// ============================================================
+// PAGE / PHASE SWITCH
+// ============================================================
+function switchPage(name, el) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('pg-'+name).classList.add('active');
+  document.querySelectorAll('.nitem').forEach(function(n){ n.classList.remove('active'); });
+  el.classList.add('active');
+  window.scrollTo(0,0);
+  if(name==='ach') renderAchievements();
+  if(name==='cal') renderCalendar();
+  if(name==='mood') renderMoodCal();
+}
+function switchPhase(id,el){
+  document.querySelectorAll('.phase').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.ptab').forEach(function(t){ t.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadState();
+checkNewDay();
+if(!state.dayNumber) state.dayNumber=1;
+if(new Date().getHours()<9) state.earlyOpen=true;
+recalcStats();
+saveState();
+renderToday();
+</script>
+</body>
+</html>
